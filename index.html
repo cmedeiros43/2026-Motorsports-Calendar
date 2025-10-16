@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2026 Motorsports Calendar</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        .animate-in {
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        .fade-in {
+            animation: fadeIn 0.2s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useMemo } = React;
+
+        // Lucide React Icons (simplified inline SVG components)
+        const Calendar = ({ className }) => (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+        );
+
+        const MapPin = ({ className }) => (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+        );
+
+        const Menu = ({ className }) => (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+        );
+
+        const X = ({ className }) => (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        );
+
+        const Sun = ({ className }) => (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line>
+                <line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+        );
+
+        const Moon = ({ className }) => (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+        );
+
+        const List = ({ className }) => (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <line x1="8" y1="6" x2="21" y2="6"></line>
+                <line x1="8" y1="12" x2="21" y2="12"></line>
+                <line x1="8" y1="18" x2="21" y2="18"></line>
+                <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                <line x1="3" y1="18" x2="3.01" y2="18"></line>
+            </svg>
+        );
+
+        const Grid = ({ className }) => (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+            </svg>
+        );
+
+        const ChevronLeft = ({ className }) => (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+        );
+
+        const ChevronRight = ({ className }) => (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+        );
+
+        const MotorsportsCalendar = () => {
+            const [selectedSeries, setSelectedSeries] = useState(['NASCAR Cup', 'NASCAR Xfinity', 'NASCAR Truck', 'IndyCar', 'IMSA', 'F1', 'WEC']);
+            const [showMenu, setShowMenu] = useState(false);
+            const [darkMode, setDarkMode] = useState(false);
+            const [viewMode, setViewMode] = useState('list');
+            const [currentMonth, setCurrentMonth] = useState(new Date(2026, 0, 1));
+
+            const events = [
+                // NASCAR Cup Series
+                { date: '2026-02-01', series: 'NASCAR Cup', name: 'Cook Out Clash', location: 'Bowman Gray Stadium, NC, USA', type: 'Special Event' },
+                { date: '2026-02-15', series: 'NASCAR Cup', name: 'Daytona 500', location: 'Daytona, FL, USA', type: 'Points Race' },
+                { date: '2026-02-22', series: 'NASCAR Cup', name: 'Atlanta', location: 'Atlanta, GA, USA', type: 'Points Race' },
+                { date: '2026-03-01', series: 'NASCAR Cup', name: 'COTA', location: 'Austin, TX, USA', type: 'Road Course' },
+                { date: '2026-03-08', series: 'NASCAR Cup', name: 'Phoenix', location: 'Phoenix, AZ, USA', type: 'Points Race' },
+                { date: '2026-03-15', series: 'NASCAR Cup', name: 'Las Vegas', location: 'Las Vegas, NV, USA', type: 'Points Race' },
+                { date: '2026-03-22', series: 'NASCAR Cup', name: 'Darlington', location: 'Darlington, SC, USA', type: 'Points Race' },
+                { date: '2026-03-29', series: 'NASCAR Cup', name: 'Martinsville', location: 'Martinsville, VA, USA', type: 'Points Race' },
+                { date: '2026-04-12', series: 'NASCAR Cup', name: 'Bristol', location: 'Bristol, TN, USA', type: 'Points Race' },
+                { date: '2026-04-19', series: 'NASCAR Cup', name: 'Kansas', location: 'Kansas City, KS, USA', type: 'Points Race' },
+                { date: '2026-04-26', series: 'NASCAR Cup', name: 'Talladega', location: 'Talladega, AL, USA', type: 'Points Race' },
+                { date: '2026-05-03', series: 'NASCAR Cup', name: 'Texas', location: 'Fort Worth, TX, USA', type: 'Points Race' },
+                { date: '2026-05-10', series: 'NASCAR Cup', name: 'Watkins Glen', location: 'Watkins Glen, NY, USA', type: 'Road Course' },
+                { date: '2026-05-17', series: 'NASCAR Cup', name: 'All-Star Race', location: 'Dover, DE, USA', type: 'Special Event' },
+                { date: '2026-05-24', series: 'NASCAR Cup', name: 'Coca-Cola 600', location: 'Charlotte, NC, USA', type: 'Points Race' },
+                { date: '2026-05-31', series: 'NASCAR Cup', name: 'Nashville', location: 'Nashville, TN, USA', type: 'Points Race' },
+                { date: '2026-06-07', series: 'NASCAR Cup', name: 'Iowa', location: 'Iowa, USA', type: 'Points Race' },
+                { date: '2026-06-14', series: 'NASCAR Cup', name: 'Sonoma', location: 'Sonoma, CA, USA', type: 'Road Course' },
+                { date: '2026-06-21', series: 'NASCAR Cup', name: 'San Diego', location: 'Naval Base Coronado, CA, USA', type: 'Street Course' },
+                { date: '2026-06-28', series: 'NASCAR Cup', name: 'St. Louis', location: 'Madison, IL, USA', type: 'Points Race' },
+                { date: '2026-07-05', series: 'NASCAR Cup', name: 'Chicagoland', location: 'Joliet, IL, USA', type: 'Points Race' },
+                { date: '2026-07-12', series: 'NASCAR Cup', name: 'Pocono', location: 'Long Pond, PA, USA', type: 'Points Race' },
+                { date: '2026-07-19', series: 'NASCAR Cup', name: 'North Wilkesboro', location: 'North Wilkesboro, NC, USA', type: 'Points Race' },
+                { date: '2026-07-26', series: 'NASCAR Cup', name: 'Indianapolis', location: 'Indianapolis, IN, USA', type: 'Points Race' },
+                { date: '2026-08-09', series: 'NASCAR Cup', name: 'Iowa', location: 'Iowa, USA', type: 'Points Race' },
+                { date: '2026-08-15', series: 'NASCAR Cup', name: 'Richmond', location: 'Richmond, VA, USA', type: 'Points Race' },
+                { date: '2026-08-23', series: 'NASCAR Cup', name: 'New Hampshire', location: 'Loudon, NH, USA', type: 'Points Race' },
+                { date: '2026-08-29', series: 'NASCAR Cup', name: 'Daytona', location: 'Daytona, FL, USA', type: 'Points Race' },
+                { date: '2026-09-06', series: 'NASCAR Cup', name: 'Darlington', location: 'Darlington, SC, USA', type: 'Playoff' },
+                { date: '2026-09-13', series: 'NASCAR Cup', name: 'Gateway', location: 'Madison, IL, USA', type: 'Playoff' },
+                { date: '2026-09-19', series: 'NASCAR Cup', name: 'Bristol', location: 'Bristol, TN, USA', type: 'Playoff' },
+                { date: '2026-09-27', series: 'NASCAR Cup', name: 'Kansas', location: 'Kansas City, KS, USA', type: 'Playoff' },
+                { date: '2026-10-04', series: 'NASCAR Cup', name: 'Las Vegas', location: 'Las Vegas, NV, USA', type: 'Playoff' },
+                { date: '2026-10-11', series: 'NASCAR Cup', name: 'Charlotte Roval', location: 'Charlotte, NC, USA', type: 'Playoff' },
+                { date: '2026-10-18', series: 'NASCAR Cup', name: 'Phoenix', location: 'Phoenix, AZ, USA', type: 'Playoff' },
+                { date: '2026-10-25', series: 'NASCAR Cup', name: 'Talladega', location: 'Talladega, AL, USA', type: 'Playoff' },
+                { date: '2026-11-01', series: 'NASCAR Cup', name: 'Martinsville', location: 'Martinsville, VA, USA', type: 'Playoff' },
+                { date: '2026-11-08', series: 'NASCAR Cup', name: 'Championship', location: 'Homestead-Miami, FL, USA', type: 'Championship' },
+
+                // NASCAR Xfinity Series (O'Reilly Auto Parts)
+                { date: '2026-02-14', series: 'NASCAR Xfinity', name: 'Daytona', location: 'Daytona, FL, USA', type: 'Points Race' },
+                { date: '2026-02-21', series: 'NASCAR Xfinity', name: 'Atlanta', location: 'Atlanta, GA, USA', type: 'Points Race' },
+                { date: '2026-02-28', series: 'NASCAR Xfinity', name: 'COTA', location: 'Austin, TX, USA', type: 'Road Course' },
+                { date: '2026-03-07', series: 'NASCAR Xfinity', name: 'Phoenix', location: 'Phoenix, AZ, USA', type: 'Points Race' },
+                { date: '2026-03-14', series: 'NASCAR Xfinity', name: 'Las Vegas', location: 'Las Vegas, NV, USA', type: 'Points Race' },
+                { date: '2026-03-21', series: 'NASCAR Xfinity', name: 'Darlington', location: 'Darlington, SC, USA', type: 'Points Race' },
+                { date: '2026-03-28', series: 'NASCAR Xfinity', name: 'Martinsville', location: 'Martinsville, VA, USA', type: 'Points Race' },
+                { date: '2026-04-04', series: 'NASCAR Xfinity', name: 'Rockingham', location: 'Rockingham, NC, USA', type: 'Points Race' },
+                { date: '2026-04-11', series: 'NASCAR Xfinity', name: 'Bristol', location: 'Bristol, TN, USA', type: 'Points Race' },
+                { date: '2026-04-18', series: 'NASCAR Xfinity', name: 'Kansas', location: 'Kansas City, KS, USA', type: 'Points Race' },
+                { date: '2026-04-25', series: 'NASCAR Xfinity', name: 'Talladega', location: 'Talladega, AL, USA', type: 'Points Race' },
+                { date: '2026-05-02', series: 'NASCAR Xfinity', name: 'Texas', location: 'Fort Worth, TX, USA', type: 'Points Race' },
+                { date: '2026-05-09', series: 'NASCAR Xfinity', name: 'Watkins Glen', location: 'Watkins Glen, NY, USA', type: 'Road Course' },
+                { date: '2026-05-16', series: 'NASCAR Xfinity', name: 'Dover', location: 'Dover, DE, USA', type: 'Points Race' },
+                { date: '2026-05-23', series: 'NASCAR Xfinity', name: 'Charlotte', location: 'Charlotte, NC, USA', type: 'Points Race' },
+                { date: '2026-05-30', series: 'NASCAR Xfinity', name: 'Nashville', location: 'Nashville, TN, USA', type: 'Points Race' },
+                { date: '2026-06-06', series: 'NASCAR Xfinity', name: 'Iowa', location: 'Iowa, USA', type: 'Points Race' },
+                { date: '2026-06-13', series: 'NASCAR Xfinity', name: 'Sonoma', location: 'Sonoma, CA, USA', type: 'Road Course' },
+                { date: '2026-06-20', series: 'NASCAR Xfinity', name: 'San Diego', location: 'Naval Base Coronado, CA, USA', type: 'Street Course' },
+                { date: '2026-06-27', series: 'NASCAR Xfinity', name: 'Gateway', location: 'Madison, IL, USA', type: 'Points Race' },
+                { date: '2026-07-04', series: 'NASCAR Xfinity', name: 'Chicagoland', location: 'Joliet, IL, USA', type: 'Points Race' },
+                { date: '2026-07-11', series: 'NASCAR Xfinity', name: 'Pocono', location: 'Long Pond, PA, USA', type: 'Points Race' },
+                { date: '2026-07-18', series: 'NASCAR Xfinity', name: 'North Wilkesboro', location: 'North Wilkesboro, NC, USA', type: 'Points Race' },
+                { date: '2026-07-25', series: 'NASCAR Xfinity', name: 'Indianapolis', location: 'Indianapolis, IN, USA', type: 'Points Race' },
+                { date: '2026-08-08', series: 'NASCAR Xfinity', name: 'Iowa', location: 'Iowa, USA', type: 'Points Race' },
+                { date: '2026-08-28', series: 'NASCAR Xfinity', name: 'Daytona', location: 'Daytona, FL, USA', type: 'Points Race' },
+                { date: '2026-09-05', series: 'NASCAR Xfinity', name: 'Darlington', location: 'Darlington, SC, USA', type: 'Regular Season Finale' },
+                { date: '2026-09-12', series: 'NASCAR Xfinity', name: 'Gateway', location: 'Madison, IL, USA', type: 'Playoff' },
+                { date: '2026-09-18', series: 'NASCAR Xfinity', name: 'Bristol', location: 'Bristol, TN, USA', type: 'Playoff' },
+                { date: '2026-09-26', series: 'NASCAR Xfinity', name: 'Kansas', location: 'Kansas City, KS, USA', type: 'Playoff' },
+                { date: '2026-10-03', series: 'NASCAR Xfinity', name: 'Las Vegas', location: 'Las Vegas, NV, USA', type: 'Playoff' },
+                { date: '2026-10-10', series: 'NASCAR Xfinity', name: 'Charlotte Roval', location: 'Charlotte, NC, USA', type: 'Playoff' },
+                { date: '2026-10-17', series: 'NASCAR Xfinity', name: 'Homestead', location: 'Homestead, FL, USA', type: 'Playoff' },
+                { date: '2026-10-24', series: 'NASCAR Xfinity', name: 'Talladega', location: 'Talladega, AL, USA', type: 'Playoff' },
+                { date: '2026-10-31', series: 'NASCAR Xfinity', name: 'Martinsville', location: 'Martinsville, VA, USA', type: 'Playoff' },
+                { date: '2026-11-07', series: 'NASCAR Xfinity', name: 'Championship', location: 'Homestead-Miami, FL, USA', type: 'Championship' },
+
+                // NASCAR Truck Series
+                { date: '2026-02-13', series: 'NASCAR Truck', name: 'Daytona', location: 'Daytona, FL, USA', type: 'Points Race' },
+                { date: '2026-02-28', series: 'NASCAR Truck', name: 'St. Petersburg', location: 'St. Petersburg, FL, USA', type: 'Street Circuit' },
+                { date: '2026-03-21', series: 'NASCAR Truck', name: 'Darlington', location: 'Darlington, SC, USA', type: 'Points Race' },
+                { date: '2026-04-03', series: 'NASCAR Truck', name: 'Rockingham', location: 'Rockingham, NC, USA', type: 'Points Race' },
+                { date: '2026-04-25', series: 'NASCAR Truck', name: 'Martinsville', location: 'Martinsville, VA, USA', type: 'Points Race' },
+                { date: '2026-05-01', series: 'NASCAR Truck', name: 'Dover', location: 'Dover, DE, USA', type: 'Points Race' },
+                { date: '2026-05-15', series: 'NASCAR Truck', name: 'Dover All-Star', location: 'Dover, DE, USA', type: 'Special Event' },
+                { date: '2026-05-22', series: 'NASCAR Truck', name: 'Charlotte', location: 'Charlotte, NC, USA', type: 'Points Race' },
+                { date: '2026-05-29', series: 'NASCAR Truck', name: 'Texas', location: 'Fort Worth, TX, USA', type: 'Points Race' },
+                { date: '2026-06-05', series: 'NASCAR Truck', name: 'Nashville', location: 'Nashville, TN, USA', type: 'Points Race' },
+                { date: '2026-06-12', series: 'NASCAR Truck', name: 'Iowa', location: 'Iowa, USA', type: 'Points Race' },
+                { date: '2026-06-19', series: 'NASCAR Truck', name: 'San Diego', location: 'Naval Base Coronado, CA, USA', type: 'Street Circuit' },
+                { date: '2026-07-03', series: 'NASCAR Truck', name: 'Mid-Ohio', location: 'Lexington, OH, USA', type: 'Road Course' },
+                { date: '2026-07-11', series: 'NASCAR Truck', name: 'Lime Rock', location: 'Lakeville, CT, USA', type: 'Road Course' },
+                { date: '2026-07-17', series: 'NASCAR Truck', name: 'North Wilkesboro', location: 'North Wilkesboro, NC, USA', type: 'Points Race' },
+                { date: '2026-07-31', series: 'NASCAR Truck', name: 'Lucas Oil Indianapolis', location: 'Indianapolis, IN, USA', type: 'Points Race' },
+                { date: '2026-08-07', series: 'NASCAR Truck', name: 'Richmond', location: 'Richmond, VA, USA', type: 'Points Race' },
+                { date: '2026-08-21', series: 'NASCAR Truck', name: 'Milwaukee', location: 'Milwaukee, WI, USA', type: 'Points Race' },
+                { date: '2026-08-27', series: 'NASCAR Truck', name: 'Daytona', location: 'Daytona, FL, USA', type: 'Regular Season Finale' },
+                { date: '2026-09-04', series: 'NASCAR Truck', name: 'Gateway', location: 'Madison, IL, USA', type: 'Playoff' },
+                { date: '2026-09-25', series: 'NASCAR Truck', name: 'Bristol', location: 'Bristol, TN, USA', type: 'Playoff' },
+                { date: '2026-10-02', series: 'NASCAR Truck', name: 'Talladega', location: 'Talladega, AL, USA', type: 'Playoff' },
+                { date: '2026-10-16', series: 'NASCAR Truck', name: 'Las Vegas', location: 'Las Vegas, NV, USA', type: 'Playoff' },
+                { date: '2026-10-23', series: 'NASCAR Truck', name: 'Homestead', location: 'Homestead, FL, USA', type: 'Playoff' },
+                { date: '2026-10-30', series: 'NASCAR Truck', name: 'Martinsville', location: 'Martinsville, VA, USA', type: 'Playoff' },
+                { date: '2026-11-06', series: 'NASCAR Truck', name: 'Championship', location: 'Homestead-Miami, FL, USA', type: 'Championship' },
+
+                // IndyCar
+                { date: '2026-03-01', series: 'IndyCar', name: 'St. Petersburg GP', location: 'St. Petersburg, FL, USA', type: 'Street Circuit' },
+                { date: '2026-03-07', series: 'IndyCar', name: 'Phoenix GP', location: 'Phoenix, AZ, USA', type: 'Oval' },
+                { date: '2026-03-15', series: 'IndyCar', name: 'Arlington GP', location: 'Arlington, TX, USA', type: 'Street Circuit' },
+                { date: '2026-03-29', series: 'IndyCar', name: 'Barber GP', location: 'Birmingham, AL, USA', type: 'Road Course' },
+                { date: '2026-04-19', series: 'IndyCar', name: 'Long Beach GP', location: 'Long Beach, CA, USA', type: 'Street Circuit' },
+                { date: '2026-05-09', series: 'IndyCar', name: 'IMS Road Course', location: 'Indianapolis, IN, USA', type: 'Road Course' },
+                { date: '2026-05-24', series: 'IndyCar', name: 'Indianapolis 500', location: 'Indianapolis, IN, USA', type: 'Oval' },
+                { date: '2026-05-31', series: 'IndyCar', name: 'Detroit GP', location: 'Detroit, MI, USA', type: 'Street Circuit' },
+                { date: '2026-06-07', series: 'IndyCar', name: 'WWTR Gateway', location: 'Madison, IL, USA', type: 'Oval' },
+                { date: '2026-06-21', series: 'IndyCar', name: 'Road America', location: 'Elkhart Lake, WI, USA', type: 'Road Course' },
+                { date: '2026-07-05', series: 'IndyCar', name: 'Mid-Ohio', location: 'Lexington, OH, USA', type: 'Road Course' },
+                { date: '2026-07-19', series: 'IndyCar', name: 'Nashville Superspeedway', location: 'Nashville, TN, USA', type: 'Oval' },
+                { date: '2026-08-09', series: 'IndyCar', name: 'Portland GP', location: 'Portland, OR, USA', type: 'Road Course' },
+                { date: '2026-08-16', series: 'IndyCar', name: 'Markham GP', location: 'Markham, ON, Canada', type: 'Street Circuit' },
+                { date: '2026-08-29', series: 'IndyCar', name: 'Milwaukee Mile 1', location: 'Milwaukee, WI, USA', type: 'Oval' },
+                { date: '2026-08-30', series: 'IndyCar', name: 'Milwaukee Mile 2', location: 'Milwaukee, WI, USA', type: 'Oval' },
+                { date: '2026-09-06', series: 'IndyCar', name: 'Laguna Seca', location: 'Monterey, CA, USA', type: 'Road Course' },
+
+                // IMSA WeatherTech
+                { date: '2026-01-16', series: 'IMSA', name: 'Roar Before Rolex 24', location: 'Daytona, FL, USA', type: 'Test' },
+                { date: '2026-01-24', series: 'IMSA', name: 'Rolex 24 at Daytona', location: 'Daytona, FL, USA', type: 'Endurance' },
+                { date: '2026-03-21', series: 'IMSA', name: 'Sebring 12 Hours', location: 'Sebring, FL, USA', type: 'Endurance' },
+                { date: '2026-04-18', series: 'IMSA', name: 'Long Beach GP', location: 'Long Beach, CA, USA', type: 'Sprint' },
+                { date: '2026-05-03', series: 'IMSA', name: 'Laguna Seca', location: 'Monterey, CA, USA', type: 'Sprint' },
+                { date: '2026-05-30', series: 'IMSA', name: 'Detroit GP', location: 'Detroit, MI, USA', type: 'Sprint' },
+                { date: '2026-06-28', series: 'IMSA', name: 'Watkins Glen 6 Hours', location: 'Watkins Glen, NY, USA', type: 'Endurance' },
+                { date: '2026-07-12', series: 'IMSA', name: 'Canadian Tire Motorsport Park', location: 'Bowmanville, ON, Canada', type: 'Sprint' },
+                { date: '2026-08-02', series: 'IMSA', name: 'Road America 6 Hours', location: 'Elkhart Lake, WI, USA', type: 'Endurance' },
+                { date: '2026-08-23', series: 'IMSA', name: 'VIR', location: 'Alton, VA, USA', type: 'Sprint' },
+                { date: '2026-09-20', series: 'IMSA', name: 'Indianapolis', location: 'Indianapolis, IN, USA', type: 'Sprint' },
+                { date: '2026-10-03', series: 'IMSA', name: 'Petit Le Mans', location: 'Braselton, GA, USA', type: 'Endurance' },
+
+                // Formula 1
+                { date: '2026-03-08', series: 'F1', name: 'Australian GP', location: 'Melbourne, Australia', type: 'Grand Prix' },
+                { date: '2026-03-15', series: 'F1', name: 'Chinese GP', location: 'Shanghai, China', type: 'Sprint' },
+                { date: '2026-03-29', series: 'F1', name: 'Japanese GP', location: 'Suzuka, Japan', type: 'Grand Prix' },
+                { date: '2026-04-12', series: 'F1', name: 'Bahrain GP', location: 'Sakhir, Bahrain', type: 'Grand Prix' },
+                { date: '2026-04-19', series: 'F1', name: 'Saudi Arabian GP', location: 'Jeddah, Saudi Arabia', type: 'Grand Prix' },
+                { date: '2026-05-03', series: 'F1', name: 'Miami GP', location: 'Miami, FL, USA', type: 'Sprint' },
+                { date: '2026-05-24', series: 'F1', name: 'Canadian GP', location: 'Montreal, Canada', type: 'Sprint' },
+                { date: '2026-06-07', series: 'F1', name: 'Monaco GP', location: 'Monte Carlo, Monaco', type: 'Grand Prix' },
+                { date: '2026-06-14', series: 'F1', name: 'Spanish GP', location: 'Barcelona, Spain', type: 'Grand Prix' },
+                { date: '2026-06-28', series: 'F1', name: 'Austrian GP', location: 'Spielberg, Austria', type: 'Grand Prix' },
+                { date: '2026-07-05', series: 'F1', name: 'British GP', location: 'Silverstone, UK', type: 'Sprint' },
+                { date: '2026-07-19', series: 'F1', name: 'Belgian GP', location: 'Spa-Francorchamps, Belgium', type: 'Grand Prix' },
+                { date: '2026-07-26', series: 'F1', name: 'Hungarian GP', location: 'Budapest, Hungary', type: 'Grand Prix' },
+                { date: '2026-08-23', series: 'F1', name: 'Dutch GP', location: 'Zandvoort, Netherlands', type: 'Sprint' },
+                { date: '2026-09-06', series: 'F1', name: 'Italian GP', location: 'Monza, Italy', type: 'Grand Prix' },
+                { date: '2026-09-13', series: 'F1', name: 'Madrid GP', location: 'Madrid, Spain', type: 'Grand Prix' },
+                { date: '2026-09-26', series: 'F1', name: 'Azerbaijan GP', location: 'Baku, Azerbaijan', type: 'Grand Prix' },
+                { date: '2026-10-11', series: 'F1', name: 'Singapore GP', location: 'Singapore', type: 'Sprint' },
+                { date: '2026-10-25', series: 'F1', name: 'US GP', location: 'Austin, TX, USA', type: 'Grand Prix' },
+                { date: '2026-11-01', series: 'F1', name: 'Mexico City GP', location: 'Mexico City, Mexico', type: 'Grand Prix' },
+                { date: '2026-11-08', series: 'F1', name: 'Brazilian GP', location: 'São Paulo, Brazil', type: 'Grand Prix' },
+                { date: '2026-11-21', series: 'F1', name: 'Las Vegas GP', location: 'Las Vegas, NV, USA', type: 'Grand Prix' },
+                { date: '2026-11-29', series: 'F1', name: 'Qatar GP', location: 'Lusail, Qatar', type: 'Grand Prix' },
+                { date: '2026-12-06', series: 'F1', name: 'Abu Dhabi GP', location: 'Abu Dhabi, UAE', type: 'Grand Prix' },
+
+                // WEC World Endurance Championship
+                { date: '2026-03-28', series: 'WEC', name: 'Qatar 1812km', location: 'Lusail, Qatar', type: 'Endurance' },
+                { date: '2026-04-19', series: 'WEC', name: '6 Hours of Imola', location: 'Imola, Italy', type: 'Endurance' },
+                { date: '2026-05-09', series: 'WEC', name: '6 Hours of Spa', location: 'Spa-Francorchamps, Belgium', type: 'Endurance' },
+                { date: '2026-06-13', series: 'WEC', name: '24 Hours of Le Mans', location: 'Le Mans, France', type: 'Endurance' },
+                { date: '2026-07-12', series: 'WEC', name: '6 Hours of São Paulo', location: 'São Paulo, Brazil', type: 'Endurance' },
+                { date: '2026-09-06', series: 'WEC', name: 'Lone Star Le Mans', location: 'Austin, TX, USA', type: 'Endurance' },
+                { date: '2026-09-27', series: 'WEC', name: '6 Hours of Fuji', location: 'Fuji, Japan', type: 'Endurance' },
+                { date: '2026-11-07', series: 'WEC', name: '8 Hours of Bahrain', location: 'Sakhir, Bahrain', type: 'Endurance' }
+            ];
+
+            const series = ['NASCAR Cup', 'NASCAR Xfinity', 'NASCAR Truck', 'IndyCar', 'IMSA', 'F1', 'WEC'];
+            
+            const seriesColors = {
+                'NASCAR Cup': 'bg-yellow-500',
+                'NASCAR Xfinity': 'bg-orange-500',
+                'NASCAR Truck': 'bg-amber-600',
+                'IndyCar': 'bg-red-500',
+                'IMSA': 'bg-blue-500',
+                'F1': 'bg-purple-500',
+                'WEC': 'bg-green-500'
+            };
+
+            const toggleSeries = (s) => {
+                setSelectedSeries(prev => 
+                    prev.includes(s) 
+                        ? prev.filter(item => item !== s)
+                        : [...prev, s]
+                );
+            };
+
+            const filteredEvents = useMemo(() => {
+                return events.filter(e => selectedSeries.includes(e.series));
+            }, [selectedSeries, events]);
+
+            const groupedEvents = useMemo(() => {
+                const grouped = {};
+                filteredEvents.forEach(event => {
+                    const month = new Date(event.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                    if (!grouped[month]) grouped[month] = [];
+                    grouped[month].push(event);
+                });
+                return grouped;
+            }, [filteredEvents]);
+
+            const formatDate = (dateStr) => {
+                const date = new Date(dateStr + 'T00:00:00');
+                return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            };
+
+            const getDayOfWeek = (dateStr) => {
+                const date = new Date(dateStr + 'T00:00:00');
+                return date.toLocaleDateString('en-US', { weekday: 'short' });
+            };
+
+            const getDaysInMonth = (date) => {
+                const year = date.getFullYear();
+                const month = date.getMonth();
+                const firstDay = new Date(year, month, 1);
+                const lastDay = new Date(year, month + 1, 0);
+                const daysInMonth = lastDay.getDate();
+                const startingDayOfWeek = firstDay.getDay();
+                
+                return { daysInMonth, startingDayOfWeek, year, month };
+            };
+
+            const getEventsForDate = (dateStr) => {
+                return filteredEvents.filter(e => e.date === dateStr);
+            };
+
+            const changeMonth = (direction) => {
+                setCurrentMonth(prev => {
+                    const newMonth = new Date(prev);
+                    newMonth.setMonth(prev.getMonth() + direction);
+                    return newMonth;
+                });
+            };
+
+            return (
+                <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gradient-to-br from-gray-900 to-black' : 'bg-gradient-to-br from-gray-50 to-gray-100'}`}>
+                    {/* iOS-style Header */}
+                    <div className={`${darkMode ? 'bg-gray-800/80' : 'bg-white/80'} backdrop-blur-xl sticky top-0 z-50 ${darkMode ? 'border-gray-700/50' : 'border-gray-200/50'} border-b shadow-sm`}>
+                        <div className="max-w-2xl mx-auto px-4 pt-safe">
+                            <div className="flex items-center justify-between py-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center shadow-lg">
+                                        <Calendar className="w-5 h-5 text-white" />
+                                    </div>
+                                    <div>
+                                        <h1 className={`text-xl font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Motorsports</h1>
+                                        <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>2026 Season</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setShowMenu(!showMenu)}
+                                    className={`w-10 h-10 rounded-full ${darkMode ? 'bg-gray-700 active:bg-gray-600' : 'bg-gray-100 active:bg-gray-200'} flex items-center justify-center transition-all`}
+                                >
+                                    {showMenu ? (
+                                        <X className={`w-5 h-5 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`} />
+                                    ) : (
+                                        <Menu className={`w-5 h-5 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`} />
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Sliding Menu */}
+                    {showMenu && (
+                        <>
+                            <div 
+                                className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 fade-in"
+                                onClick={() => setShowMenu(false)}
+                            />
+                            
+                            <div className={`fixed top-0 right-0 bottom-0 w-80 max-w-[85vw] ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-2xl z-50 animate-in overflow-y-auto`}>
+                                <div className="p-6 space-y-6">
+                                    <div className="flex items-center justify-between pb-4 border-b border-gray-200 dark:border-gray-700">
+                                        <h2 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Settings</h2>
+                                        <button
+                                            onClick={() => setShowMenu(false)}
+                                            className={`w-8 h-8 rounded-full ${darkMode ? 'bg-gray-700' : 'bg-gray-100'} flex items-center justify-center`}
+                                        >
+                                            <X className={`w-4 h-4 ${darkMode ? 'text-gray-200' : 'text-gray-600'}`} />
+                                        </button>
+                                    </div>
+
+                                    {/* Dark Mode Toggle */}
+                                    <div>
+                                        <h3 className={`text-sm font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-3`}>Appearance</h3>
+                                        <button
+                                            onClick={() => setDarkMode(!darkMode)}
+                                            className={`w-full flex items-center justify-between p-4 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-gray-50'} transition-all active:scale-98`}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                {darkMode ? (
+                                                    <Moon className="w-5 h-5 text-blue-400" />
+                                                ) : (
+                                                    <Sun className="w-5 h-5 text-orange-500" />
+                                                )}
+                                                <span className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                                                    {darkMode ? 'Dark Mode' : 'Light Mode'}
+                                                </span>
+                                            </div>
+                                            <div className={`w-12 h-7 rounded-full transition-colors ${darkMode ? 'bg-blue-500' : 'bg-gray-300'} relative`}>
+                                                <div className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-transform ${darkMode ? 'translate-x-6' : 'translate-x-1'}`}></div>
+                                            </div>
+                                        </button>
+                                    </div>
+
+                                    {/* View Mode Toggle */}
+                                    <div>
+                                        <h3 className={`text-sm font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-3`}>View</h3>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => setViewMode('list')}
+                                                className={`flex-1 flex items-center justify-center gap-2 p-4 rounded-xl transition-all active:scale-98 ${
+                                                    viewMode === 'list'
+                                                        ? darkMode 
+                                                            ? 'bg-gray-700 border-2 border-blue-500' 
+                                                            : 'bg-blue-50 border-2 border-blue-500'
+                                                        : darkMode
+                                                            ? 'bg-gray-700/50 border-2 border-transparent'
+                                                            : 'bg-gray-50 border-2 border-transparent'
+                                                }`}
+                                            >
+                                                <List className={`w-5 h-5 ${viewMode === 'list' ? 'text-blue-500' : darkMode ? 'text-gray-400' : 'text-gray-600'}`} />
+                                                <span className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>List</span>
+                                            </button>
+                                            <button
+                                                onClick={() => setViewMode('calendar')}
+                                                className={`flex-1 flex items-center justify-center gap-2 p-4 rounded-xl transition-all active:scale-98 ${
+                                                    viewMode === 'calendar'
+                                                        ? darkMode 
+                                                            ? 'bg-gray-700 border-2 border-blue-500' 
+                                                            : 'bg-blue-50 border-2 border-blue-500'
+                                                        : darkMode
+                                                            ? 'bg-gray-700/50 border-2 border-transparent'
+                                                            : 'bg-gray-50 border-2 border-transparent'
+                                                }`}
+                                            >
+                                                <Grid className={`w-5 h-5 ${viewMode === 'calendar' ? 'text-blue-500' : darkMode ? 'text-gray-400' : 'text-gray-600'}`} />
+                                                <span className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>Calendar</span>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Series Filter */}
+                                    <div>
+                                        <h3 className={`text-sm font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-3`}>Series</h3>
+                                        <div className="space-y-2">
+                                            {series.map(s => (
+                                                <button
+                                                    key={s}
+                                                    onClick={() => toggleSeries(s)}
+                                                    className={`w-full flex items-center justify-between p-4 rounded-xl transition-all active:scale-98 ${
+                                                        selectedSeries.includes(s)
+                                                            ? darkMode 
+                                                                ? 'bg-gray-700 border-2 border-blue-500' 
+                                                                : 'bg-blue-50 border-2 border-blue-500'
+                                                            : darkMode
+                                                                ? 'bg-gray-700/50 border-2 border-transparent'
+                                                                : 'bg-gray-50 border-2 border-transparent'
+                                                    }`}
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <span className={`w-3 h-3 rounded-full ${seriesColors[s]}`}></span>
+                                                        <span className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>{s}</span>
+                                                    </div>
+                                                    <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors ${
+                                                        selectedSeries.includes(s)
+                                                            ? 'bg-blue-500 border-blue-500'
+                                                            : darkMode 
+                                                                ? 'border-gray-600' 
+                                                                : 'border-gray-300'
+                                                    }`}>
+                                                        {selectedSeries.includes(s) && (
+                                                            <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                                            </svg>
+                                                        )}
+                                                    </div>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Selection Info */}
+                                    <div className={`p-4 rounded-xl ${darkMode ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
+                                        <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                                            {selectedSeries.length === 0 
+                                                ? 'Select at least one series to view events'
+                                                : `Showing ${filteredEvents.length} event${filteredEvents.length !== 1 ? 's' : ''} from ${selectedSeries.length} series`
+                                            }
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </>
+                    )}
+
+                    {/* Event Count */}
+                    <div className="max-w-2xl mx-auto px-4 py-4">
+                        <p className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                            {filteredEvents.length} event{filteredEvents.length !== 1 ? 's' : ''}
+                        </p>
+                    </div>
+
+                    {/* Main Content */}
+                    {selectedSeries.length === 0 ? (
+                        <div className="max-w-2xl mx-auto px-4 py-20 text-center">
+                            <div className={`text-6xl mb-4`}>🏁</div>
+                            <h3 className={`text-lg font-semibold mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>No Series Selected</h3>
+                            <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                Open the menu and select at least one series to view events
+                            </p>
+                        </div>
+                    ) : viewMode === 'calendar' ? (
+                        <div className="max-w-2xl mx-auto px-4 pb-20">
+                            {/* Month Navigation */}
+                            <div className="flex items-center justify-between mb-6">
+                                <button
+                                    onClick={() => changeMonth(-1)}
+                                    className={`w-10 h-10 rounded-full ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-sm flex items-center justify-center active:scale-95 transition-transform`}
+                                >
+                                    <ChevronLeft className={`w-5 h-5 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`} />
+                                </button>
+                                <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                                    {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                                </h2>
+                                <button
+                                    onClick={() => changeMonth(1)}
+                                    className={`w-10 h-10 rounded-full ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-sm flex items-center justify-center active:scale-95 transition-transform`}
+                                >
+                                    <ChevronRight className={`w-5 h-5 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`} />
+                                </button>
+                            </div>
+
+                            {/* Calendar Grid */}
+                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-sm p-4 mb-6`}>
+                                <div className="grid grid-cols-7 gap-2 mb-2">
+                                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                                        <div key={day} className="text-center">
+                                            <span className={`text-xs font-semibold ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                                                {day}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="grid grid-cols-7 gap-2">
+                                    {(() => {
+                                        const { daysInMonth, startingDayOfWeek, year, month } = getDaysInMonth(currentMonth);
+                                        const days = [];
+                                        
+                                        for (let i = 0; i < startingDayOfWeek; i++) {
+                                            days.push(<div key={`empty-${i}`} className="aspect-square"></div>);
+                                        }
+                                        
+                                        for (let day = 1; day <= daysInMonth; day++) {
+                                            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                                            const dayEvents = getEventsForDate(dateStr);
+                                            
+                                            days.push(
+                                                <div
+                                                    key={day}
+                                                    className={`aspect-square rounded-lg p-1 ${darkMode ? 'bg-gray-700/50' : 'bg-gray-50'}`}
+                                                >
+                                                    <div className={`text-sm font-semibold mb-1 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                                                        {day}
+                                                    </div>
+                                                    <div className="space-y-0.5">
+                                                        {dayEvents.slice(0, 3).map((event, idx) => (
+                                                            <div
+                                                                key={idx}
+                                                                className={`w-full h-1 rounded-full ${seriesColors[event.series]}`}
+                                                                title={`${event.series}: ${event.name}`}
+                                                            ></div>
+                                                        ))}
+                                                        {dayEvents.length > 3 && (
+                                                            <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                                                +{dayEvents.length - 3}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        }
+                                        
+                                        return days;
+                                    })()}
+                                </div>
+                            </div>
+
+                            {/* Events List */}
+                            <div className="space-y-2">
+                                <h3 className={`text-sm font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-3`}>
+                                    Events This Month
+                                </h3>
+                                {(() => {
+                                    const monthKey = currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                                    const monthEvents = groupedEvents[monthKey] || [];
+                                    
+                                    if (monthEvents.length === 0) {
+                                        return (
+                                            <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                                No events this month
+                                            </p>
+                                        );
+                                    }
+                                    
+                                    return monthEvents.map((event, idx) => (
+                                        <div
+                                            key={idx}
+                                            className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} rounded-xl p-3 shadow-sm border`}
+                                        >
+                                            <div className="flex items-start justify-between gap-2 mb-1">
+                                                <h4 className={`font-semibold text-sm ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                                                    {event.name}
+                                                </h4>
+                                                <span className={`flex-shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold text-white ${seriesColors[event.series]}`}>
+                                                    {event.series}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-3 text-xs">
+                                                <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>
+                                                    {formatDate(event.date)}
+                                                </span>
+                                                <span className={darkMode ? 'text-gray-500' : 'text-gray-400'}>•</span>
+                                                <span className={`${darkMode ? 'text-gray-400' : 'text-gray-600'} truncate`}>
+                                                    {event.location}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ));
+                                })()}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="max-w-2xl mx-auto px-4 pb-20 space-y-6">
+                            {Object.entries(groupedEvents).map(([month, monthEvents]) => (
+                                <div key={month} className="space-y-3">
+                                    <div className="flex items-center gap-3 px-2">
+                                        <h2 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{month}</h2>
+                                        <div className={`h-px flex-1 ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}></div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        {monthEvents.map((event, idx) => (
+                                            <div
+                                                key={idx}
+                                                className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} rounded-2xl p-4 shadow-sm active:scale-98 transition-transform border`}
+                                            >
+                                                <div className="flex gap-4">
+                                                    <div className="flex-shrink-0 w-14 text-center">
+                                                        <div className={`text-xs font-semibold uppercase tracking-wider ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                                                            {getDayOfWeek(event.date)}
+                                                        </div>
+                                                        <div className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                                                            {formatDate(event.date).split(' ')[1]}
+                                                        </div>
+                                                        <div className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                                                            {formatDate(event.date).split(' ')[0]}
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-start justify-between gap-2 mb-2">
+                                                            <h3 className={`font-semibold leading-tight ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                                                                {event.name}
+                                                            </h3>
+                                                            <span className={`flex-shrink-0 px-2.5 py-1 rounded-full text-xs font-semibold text-white ${seriesColors[event.series]}`}>
+                                                                {event.series}
+                                                            </span>
+                                                        </div>
+                                                        
+                                                        <div className={`flex items-center gap-1.5 text-sm mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                                            <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+                                                            <span className="truncate">{event.location}</span>
+                                                        </div>
+
+                                                        <div className={`inline-block px-2 py-0.5 rounded-md text-xs font-medium ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>
+                                                            {event.type}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        ReactDOM.render(<MotorsportsCalendar />, document.getElementById('root'));
+    </script>
+</body>
+</html>
